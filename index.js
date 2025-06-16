@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
-const { default: makeWASocket, useMultiFileAuthState } = require('@adiwajshing/baileys');
+const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const fs = require('fs');
+const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
