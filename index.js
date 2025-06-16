@@ -1,23 +1,36 @@
 const express = require('express');
 const app = express();
-__path = process.cwd()
-const bodyParser = require("body-parser");
-const PORT = process.env.PORT || 8000;
-let server = require('./qr'),
-    code = require('./pair');
-require('events').EventEmitter.defaultMaxListeners = 500;
-app.use('/qr', server);
-app.use('/code', code);
-app.use('/pair',async (req, res, next) => {
-res.sendFile(__path + '/pair.html')
-})
-app.use('/',async (req, res, next) => {
-res.sendFile(__path + '/main.html')
-})
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:` + PORT)
-})
+const { default: makeWASocket, useMultiFileAuthState } = require('@adiwajshing/baileys');
 
-module.exports = app
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+const authState = useMultiFileAuthState('./auth');
+
+const sock = makeWASocket({
+  auth: authState.state,
+  printQRInTerminal: true,
+});
+
+app.get('/pairing-code', async (req, res) => {
+  try {
+    const code = await sock.requestPairingCode();
+    res.json({ code });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate pairing code' });
+  }
+});
+
+app.get('/qr-code', async (req, res) => {
+  try {
+    const qrCode = await sock.generateQRCode();
+    res.json({ qrCode });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate QR code' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
+});
